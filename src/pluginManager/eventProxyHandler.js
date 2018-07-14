@@ -1,13 +1,14 @@
 const { stripIndents } = require('common-tags');
 const Plugin = require('./base');
 const { Collection } = require('discord.js');
+const TwoWayMap = require('../twoWayMap');
+const listenersMap = new WeakMap();
 
  /**
   * @class {EventProxyHandler} EventProxyHandler
   */
 class EventProxyHandler {
-	constructor(manager) {
-		this.manager = manager;
+	constructor() {
 		this.cache = new Collection();
 		this.plugin = null;
 	}
@@ -15,16 +16,15 @@ class EventProxyHandler {
 		if(this.plugin) throw new Error('Attempting to set plugin twice');
 		if(!(plugin instanceof Plugin)) throw new Error(`${Plugin} is not a valid Plugin instance`);
 		if(this.cache.size) {
-			this.manager.client.emit('warn', stripIndents`
+			plugin.client.emit('warn', stripIndents`
 			Plugin ${plugin} is registering listeners in the constructor.
 			You probably want to register listeners in the Plugin#load method instead.`);
 		}
-		this.manager.listeners.set(plugin, this.cache);
+		listenersMap.set(plugin, this.cache);
 		delete this.cache;
 		this.plugin = plugin;
 	}
 	get(target, prop, receiver, ...args) {
-		const manager = this.manager;
 		const cache = this.cache;
 		const plugin = this.plugin;
 		switch(prop) {
@@ -32,67 +32,68 @@ class EventProxyHandler {
 			case 'on':
 			case 'prependListener':
 			case 'prependOnceListener':
-				// eslint-disable-next-line func-names
 				return { [prop]: (eventName, listener) => {
-					const wrappedListner = async(...listnerArgs) => {
+					const wrappedListener = async(...listenerArgs) => {
 						try {
-							await listener(...listnerArgs);
+							await listener(...listenerArgs);
 						} catch(err) {
-							manager.crash(plugin, err);
+							plugin.crash(err);
 						}
 					};
-					target[prop](eventName, wrappedListner);
-					const listeners = cache || manager.listeners.get(plugin);
+					target[prop](eventName, wrappedListener);
+					const listeners = cache || listenersMap.get(plugin);
 
 					let fns = listeners.get(eventName);
-					if(!fns) listeners.set(eventName, fns = new Map());
+					if(!fns) listeners.set(eventName, fns = new TwoWayMap());
 
-					fns.set(listener, wrappedListner);
+					fns.set(listener, wrappedListener);
 					return receiver;
 				} }[prop];
 			case 'removeListener':
 			case 'off':
 				return { [prop]: (eventName, listener) => {
-					const listeners = cache || manager.listeners.get(plugin);
+					const listeners = cache || listenersMap.get(plugin);
 					if(!listeners.has(eventName) || !listeners.get(eventName).has(listener)) {
 						return receiver;
 					}
-					const wrappedListner = listeners.get(eventName).get(listener);
-					target[prop](eventName, wrappedListner);
-					if(!target.listeners(eventName).includes(wrappedListner)) {
+					const wrappedListener = listeners.get(eventName).get(listener);
+					target[prop](eventName, wrappedListener);
+					if(!target.listeners(eventName).includes(wrappedListener)) {
 						listeners.get(eventName).delete(listener);
 					}
 					return receiver;
 				} }[prop];
 			case 'removeAllListeners':
 				return function removeAllListeners(eventName) {
-					const listeners = cache || manager.listeners.get(plugin);
+					const listeners = cache || listenersMap.get(plugin);
 					if(!eventName) {
 						listeners.forEach((fns, ev) => {
-							for(let fn of fns) {
-								target.listeners(ev).filter(evListner => evListner === fn).forEach(() => {
-									target.off(eventName, fn);
-								});
-							}
-						});
-					} else {
-						for(let fn of listeners.get(eventName)) {
-							target.listeners(eventName).filter(evListner => evListner === fn).forEach(() => {
-								target.off(eventName, fn);
+							const wrappedListeners = [...fns.values()];
+							target.listeners(ev).filter(evListener => wrappedListeners.includes(evListener)).forEach(fn => {
+								target.off(ev, fn);
 							});
-						}
+						});
+						listeners.clear();
+					} else {
+						const fns = listeners.get(eventName);
+						const wrappedListeners = [...fns.values()];
+						target.listeners(eventName).filter(evListener => wrappedListeners.includes(evListener)).forEach(fn => {
+							target.off(eventName, fn);
+						});
+						fns.clear();
 					}
 					return receiver;
 				};
 			case 'listeners':
 				return function listeners(eventName) {
-					const proxyListeners = (cache || manager.listeners.get(plugin)).get(eventName);
+					const proxyListeners = (cache || listenersMap.get(plugin)).get(eventName);
 					if(!proxyListeners) return [];
-					return target.listeners(eventName).map(listner => proxyListeners.get(listner)).filter(listner => listner);
+					return target.listeners(eventName)
+						.map(listener => proxyListeners.reversed.get(listener)).filter(listener => listener);
 				};
-			case 'listnerCount':
-				return function listnerCount(eventName) {
-					return receiver.listners(eventName).length;
+			case 'listenerCount':
+				return function listenerCount(eventName) {
+					return receiver.listeners(eventName).length;
 				};
 			default:
 				return Reflect.get(target, prop, receiver, ...args);

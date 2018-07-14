@@ -1,11 +1,11 @@
 const Client = require('./client');
 const Manager = require('./pluginManager/manager');
 const Plugin = require('./pluginManager/base');
-const PluginGroup = require('./pluginManager/group');
+const PluginGroup = require('./pluginManager/pluginGroup');
 
 function inject(client) {
 	const manager = new Manager(client);
-	manager.plugins = manager;
+	client.plugins = manager;
 	return client;
 }
 

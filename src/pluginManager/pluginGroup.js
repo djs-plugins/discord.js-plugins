@@ -1,7 +1,9 @@
 const { Collection } = require('discord.js');
 
-/** A group for plugins */
-class PluginGroup {
+/** A group for plugins
+ * @extends {Collection<string, Plugin>}
+*/
+class PluginGroup extends Collection {
 	/**
 	 * @param {PluginsClient} client - The client the group is for
 	 * @param {string} id - The ID for the group
@@ -9,9 +11,10 @@ class PluginGroup {
 	 * @param {boolean} [guarded=false] - Whether the group should be protected from disabling
 	 */
 	constructor(client, id, name, guarded = false) {
+		super();
 		if(!client) throw new Error('A client must be specified.');
 		if(typeof id !== 'string') throw new TypeError('Group ID must be a string.');
-		if(id !== id.toLowerCase()) throw new Error('Group ID must be lowercase.');
+		if(id.includes(':')) throw new Error('Group ID cannot include \':\'');
 
 		/**
 		 * Client that this group is for
@@ -34,18 +37,10 @@ class PluginGroup {
 		this.name = name || id;
 
 		/**
-		 * The plugins in this group (added upon their registration)
-		 * @type {Collection<string, Plugin>}
-		 */
-		this.plugins = new Collection();
-
-		/**
 		 * Whether or not this group is protected from being disabled
 		 * @type {boolean}
 		 */
 		this.guarded = guarded;
-
-		this._globalEnabled = true;
 	}
 
 	/**

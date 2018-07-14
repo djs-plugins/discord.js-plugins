@@ -1,5 +1,6 @@
 // eslint-disable-next-line spaced-comment
 /// <reference path="../../typings/index.d.ts" />
+const path = require('path');
 const { Collection } = require('discord.js');
 const Plugin = require('./base');
 const PluginGroup = require('./pluginGroup');
@@ -15,11 +16,13 @@ const EventProxyHandler = require('./eventProxyHandler');
  */
 
  /**
-  * @class {PluginManager} PluginManager
+  * @class
+  * @extends {Collection<string, PluginGroup>}
   */
-class PluginManager {
+class PluginManager extends Collection {
     /** @param {Client} client - Client to use  */
 	constructor(client) {
+		super();
         /**
          * The client that instantiated this
          * @name PluginManager#client
@@ -27,18 +30,6 @@ class PluginManager {
          * @readonly
          */
 		Object.defineProperty(this, 'client', { value: client });
-
-        /**
-         * Registered plugins
-         * @type {Collection<string, Plugin>}
-         */
-		this.plugins = new Collection();
-
-        /**
-         * Registered plugin groups
-         * @type {Collection<string, PluginGroup>}
-         */
-		this.groups = new Collection([['default', new PluginGroup(client, 'default')]]);
 
 		/**
          * Event listeners that each plugin has registered.
@@ -51,6 +42,46 @@ class PluginManager {
          * @type {?string}
          */
 		this.pluginsPath = null;
+
+		this.crashingPlugins = new Set();
+	}
+
+	has(key) {
+		const keyArr = key.split(':');
+		const groupID = keyArr.shift();
+		const pluginName = keyArr.join(':');
+		if(pluginName) {
+			const group = super.get(groupID);
+			if(group) {
+				return group.has(pluginName);
+			}
+		}
+		return super.has(groupID);
+	}
+
+	get(key) {
+		const keyArr = key.split(':');
+		const groupID = keyArr.shift();
+		const pluginName = keyArr.join(':');
+		const group = super.get(groupID);
+		if(group && pluginName) {
+			return group.get(pluginName);
+		}
+		return group;
+	}
+
+	set(key, val) {
+		const keyArr = key.split(':');
+		const groupID = keyArr.shift();
+		const pluginName = keyArr.join(':');
+		if(pluginName) {
+			const group = super.get(groupID);
+			if(!group) throw new Error(`Group ${groupID} not found`);
+			group.set(pluginName, val);
+		} else {
+			super.set(groupID, val);
+		}
+		return this;
 	}
 
   /**
@@ -70,12 +101,12 @@ class PluginManager {
 			group = new PluginGroup(this.client, group.id, group.name, group.guarded);
 		}
 
-		const existing = this.groups.get(group.id);
+		const existing = this.get(group.id);
 		if(existing) {
 			existing.name = group.name;
 			this.client.emit('debug', `Plugin group ${group.id} is already registered; renamed it to "${group.name}".`);
 		} else {
-			this.groups.set(group.id, group);
+			this.set(group.id, group);
       /**
        * Emitted when a group is registered
        * @event PluginsClient#pluginGroupRegister
@@ -131,16 +162,15 @@ class PluginManager {
 		proxyHandler.setPlugin(plugin);
 
         // Make sure there aren't any conflicts
-		if(this.plugins.some(mod => mod.name === plugin.name)) {
-			throw new Error(`A plugin with the name "${plugin.name}" is already registered.`);
-		}
-		const group = this.groups.find(grp => grp.id === plugin.groupID);
+		const group = this.find(grp => grp.id === plugin.groupID);
 		if(!group) throw new Error(`Group "${plugin.groupID}" is not registered.`);
+		if(group.some(mod => mod.name === plugin.name)) {
+			throw new Error(`A plugin with the name "${plugin.name}" is already loaded in group ${group.name}.`);
+		}
 
 		// Add the plugin
 		plugin.group = group;
-		group.plugins.set(plugin.name, plugin);
-		this.plugins.set(plugin.name, plugin);
+		group.set(plugin.name, plugin);
 
 		/**
 		 * Emitted when a plugin is registered
@@ -153,11 +183,11 @@ class PluginManager {
 
 		if(plugin.autostart || (plugin.autostart !== false && group.autostart) || plugin.guarded || group.guarded) {
 			if(plugin.autostart === false && plugin.guarded) {
-				this.client.emit('warn', oneLine`${plugin} have disabled autostart, but have guarded set.
+				this.client.emit('warn', oneLine`${plugin.name} has autostart disabled, but has guarded set.
 				this is probably incorrect. Guarded overrides autostart, so autostarting plugin anyway`);
 			}
 			if(plugin.autostart === false && !plugin.guarded) {
-				this.client.emit('warn', oneLine`${plugin} did not have autostart set, is part of
+				this.client.emit('warn', oneLine`${plugin.has} did not have autostart set, is part of
 				${group} which has guarded set. This is probably incorrect.
 				Guarded overrides autostart, so autostarting plugin anyway`);
 			}
@@ -207,23 +237,91 @@ class PluginManager {
 		return this.loadPlugins(plugins, true);
 	}
 
+	reloadPlugin(plugin, throwOnFail = false) {
+		let pluginPath, cached, newPlugin, started = false, destroyAttempted = false;
+		try {
+			started = plugin.started;
+			pluginPath = this.resolvePluginPath(plugin);
+			if(!pluginPath) throw new Error('Cannot find plugin path');
+			cached = require.cache[pluginPath];
+			delete require.cache[pluginPath];
+			newPlugin = require(pluginPath);
+			plugin.group.delete(plugin.name);
+			this.loadPlugin(newPlugin);
+			destroyAttempted = true;
+			plugin.destroy();
+		} catch(err) {
+			if(throwOnFail) throw err;
+			if(cached && !destroyAttempted) {
+				require.cache[pluginPath] = cached;
+				if(plugin.group.has(plugin.name)) plugin.group.delete(plugin.name);
+				plugin.group.set(plugin.name, plugin);
+				if(started) plugin.start();
+			} else if(destroyAttempted) {
+				throw err;
+			}
+		}
+	}
+
 	unloadPlugin(plugin) {
-		if(!this.plugins.has(plugin.name) && !this.plugins.has(plugin)) throw new Error('Plugin not loaded');
-		if(!(plugin instanceof Plugin)) plugin = this.plugins.get(plugin);
-		if(plugin.guarded) throw new Error(`Refusing to unload plugin, ${plugin} is guarded`);
+		if(!this.has(plugin.name) && !this.has(plugin)) throw new Error('Plugin not loaded');
+		if(!(plugin instanceof Plugin)) plugin = this.get(plugin);
+		if(plugin.guarded) throw new Error(`Refusing to unload plugin, ${plugin.name} is guarded`);
 		if(plugin.group.guarded) {
 			throw new Error(oneLine`Refusing to unload plugin, ${plugin}
 			is part of ${plugin.group} and that group is guarded`);
 		}
 
-		const cmdPath = this.resolvePluginPath(plugin.groupID, plugin.memberName);
-		if(!require.cache[cmdPath]) throw new Error('Plugin cannot be unloaded.');
+		const pluginPath = this.resolvePluginPath(plugin);
+		if(!pluginPath) throw new Error('Plugin cannot be unloaded.');
 
-		plugin.stop();
 		plugin.destroy();
 
-		delete require.cache[cmdPath];
-		this.plugins.delete(plugin.name);
+		delete require.cache[pluginPath];
+		plugin.group.delete(plugin.name);
+		this.delete(plugin);
+	}
+
+	/**
+	 * Resolves a plugin file path from a plugin's group ID and name
+	 * @param {Plugin} plugin - Plugin to get the path for
+	 * @return {string} Fully-resolved path to the corresponding command file
+	 */
+	resolvePluginPath(plugin) {
+		const inferredPath = path.join(this.pluginsPath, plugin.groupID, `${plugin.name}.js`);
+		// First try and find the plugin trough inferredPath since this will save us from searching
+		// the entire require.cache for a file that exports the current plugin.
+		if(require.cache[inferredPath] && require.cache[inferredPath].exports === plugin.constructor) {
+			return inferredPath;
+		}
+
+		for(let cacheId in require.cache) {
+			let cached = require.cache[cacheId];
+			if(cached.exports === plugin.constructor) {
+				return cacheId;
+			}
+		}
+		return null;
+	}
+
+	crash(plugin, err) {
+		const pluginIdentifier = `${plugin.groupID}:${plugin.name}`;
+		if(this.crashingPlugins.has(pluginIdentifier)) return;
+		this.crashingPlugins.add(pluginIdentifier);
+		this.client.emit('pluginError', plugin, err);
+		try {
+			if(!plugin.guarded) {
+				plugin.unload();
+			} else {
+				plugin.reload(true);
+			}
+			this.crashingPlugins.delete(pluginIdentifier);
+		} catch(err2) {
+			// Give logging and other stuff 5 seconds to do stuff before forcibly crashing the process.
+			setTimeout(() => process.exit(1), 5000);
+			this.client.emit('pluginFatal', 'Failed to unload crashed plugin', err2);
+			this.client.destroy();
+		}
 	}
 }
 

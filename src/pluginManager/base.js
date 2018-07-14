@@ -32,6 +32,7 @@ class Plugin {
 		if(new.target === Plugin) {
 			throw new TypeError('Cannot construct Abstract instances directly');
 		}
+		this.constructor.validateInfo(client, info);
 
 		/**
 		 * Client that this plugin is for
@@ -49,8 +50,8 @@ class Plugin {
 		 * @readonly
 		 */
 		Reflect.defineProperty(this, 'reload', {
-			value: function unload() {
-				this.client.plugins.reload(this);
+			value: function reload(throwOnFail = false) {
+				this.client.plugins.reloadPlugin(this, throwOnFail);
 			}
 		});
 
@@ -63,7 +64,7 @@ class Plugin {
 		 */
 		Reflect.defineProperty(this, 'unload', {
 			value: function unload() {
-				this.client.plugins.unload(this);
+				this.client.plugins.unloadPlugin(this);
 			}
 		});
 
@@ -77,7 +78,7 @@ class Plugin {
 		 * ID of the group the plugin belongs to
 		 * @type {string}
 		 */
-		this.groupID = info.group || 'default';
+		this.groupID = info.group;
 
 		/**
 		 * The group the plugin belongs to, assigned upon registration
@@ -107,29 +108,91 @@ class Plugin {
 		 * Whether the plugin should start on load
 		 * @type {boolean}
 		 */
-		this.autostart = info.autostart !== 'undefined' ? Boolean(info.autostart) : true;
+		this.autostart = 'autostart' in info ? info.autostart : true;
+
+		let _started = false, _destroyed = false;
+
+		/**
+		 * Wether this plugin is started
+		 * @name Plugin#started
+		 * @type {boolean}
+		 * @readonly
+		 */
+		Reflect.defineProperty(this, 'started', {
+			get() {
+				return _started;
+			}
+		});
+
+		/**
+		 * Wether this plugin is destroyed
+		 * @name Plugin#destroyed
+		 * @type {boolean}
+		 * @readonly
+		 */
+		Reflect.defineProperty(this, 'destroyed', {
+			get() {
+				return _destroyed;
+			}
+		});
+
+		const origStart = this.start;
+		Reflect.defineProperty(this, 'start', {
+			value: function start(...args) {
+				if(this._destroyed) {
+					throw Error(`Cannot start plugin '${this.groupID}:${this.name}', plugin destroyed`);
+				}
+				if(_started) return;
+				origStart.apply(this, args);
+				_started = true;
+			}
+		});
+
+		const origStop = this.stop;
+		Reflect.defineProperty(this, 'stop', {
+			value: function stop(...args) {
+				if(!_started) return;
+				origStop.apply(this, args);
+				this.client.removeAllListeners();
+				_started = false;
+			}
+		});
+
+		const origDestroy = this.destroy;
+		Reflect.defineProperty(this, 'destroy', {
+			value: function destroy(...args) {
+				if(_started) this.stop();
+				origDestroy.apply(this, args);
+				_destroyed = true;
+			}
+		});
+
+		Reflect.defineProperty(this, 'crash', {
+			value: function crash(err) {
+				this.client.plugins.crash(this, err);
+			}
+		});
 	}
 
 	/**
-	 * Starts the plugin. Register any event listeners to {@link Client} here.
-	 * @abstract
+	 * Starts the plugin.
+	 * Overload this to register any event listeners or {@link Plugin#client} here.
 	 */
 	start() {
 		// ABSTRACT
 	}
 
 	/**
-	 * Called when the plugin gets stopped. Event listeners on {@link Client} are automatically cleared.
-	 * If you override this, make sure you call `super.stop()` to automatically clear all registered listeners.
+	 * Called when the plugin gets stopped. Event listeners on {@link Plugin#client} are automatically cleared.
 	 */
 	stop() {
-		this.client.removeAllListeners();
+		// ABSTRACT
 	}
 
 	/**
 	 * Called when the plugin gets unloaded.
 	 * Using {@link Plugin#stop} over `Plugin#destroy` is preferred.
-	 * @abstract
+	 * Will automatically call {@link Plugin#stop} if plugin is not stopped already.
 	 */
 	destroy() {
 		// ABSTRACT
@@ -149,9 +212,12 @@ class Plugin {
 		}
 		if(typeof info !== 'object') throw new TypeError('Plugin info must be an Object.');
 		if(typeof info.name !== 'string') throw new TypeError('Plugin name must be a string.');
-		if('group' in info && typeof info.group !== 'string') throw new TypeError('Plugin group must be a string if set.');
+		if(typeof info.group !== 'string') throw new TypeError('Plugin group must be a string.');
 		if(typeof info.description !== 'string') throw new TypeError('Plugin description must be a string.');
 		if('details' in info && typeof info.details !== 'string') throw new TypeError('Plugin details must be a string.');
+		if('autostart' in info && typeof info.autostart !== 'boolean') {
+			throw new TypeError('Plugin autostart must be a boolean if set.');
+		}
 	}
 }
 
