@@ -5,13 +5,21 @@ const TwoWayMap = require('../twoWayMap');
 const listenersMap = new WeakMap();
 
  /**
+  * A proxy handler for {@link Client} this isolates the event listeners
+  * on {@link Client} on a per-plugin basis and catches any errors that any
+  * listeners to {@link Client} may throw.
   * @class {EventProxyHandler} EventProxyHandler
+  * @private
   */
 class EventProxyHandler {
 	constructor() {
 		this.cache = new Collection();
 		this.plugin = null;
 	}
+
+	/**
+	 * @param {Plugin} plugin the plugin this handler is for
+	 */
 	setPlugin(plugin) {
 		if(this.plugin) throw new Error('Attempting to set plugin twice');
 		if(!(plugin instanceof Plugin)) throw new Error(`${Plugin} is not a valid Plugin instance`);

@@ -237,6 +237,15 @@ class PluginManager extends Collection {
 		return this.loadPlugins(plugins, true);
 	}
 
+	/**
+	 * Reloads a plugin
+	 * @param {Plugin} plugin The plugin to reload
+	 * @param {boolean} throwOnFail Whether to rethrow any errors during reloading,
+	 * or if to attempt a revert and just return the error.
+	 * NOTE: It will still throw in some instances,
+	 * depending on what goes wrong during the reload, even when this is set to true.
+	 * @returns {Error?} Returns null if the reload was successful, otherwise returns the error thrown during the reload.
+	 */
 	reloadPlugin(plugin, throwOnFail = false) {
 		let pluginPath, cached, newPlugin, started = false, destroyAttempted = false;
 		try {
@@ -250,6 +259,7 @@ class PluginManager extends Collection {
 			this.loadPlugin(newPlugin);
 			destroyAttempted = true;
 			plugin.destroy();
+			return null;
 		} catch(err) {
 			if(throwOnFail) throw err;
 			if(cached && !destroyAttempted) {
@@ -260,9 +270,14 @@ class PluginManager extends Collection {
 			} else if(destroyAttempted) {
 				throw err;
 			}
+			return err;
 		}
 	}
 
+	/**
+	 * Unloads a plugin
+	 * @param {Plugin} plugin The plugin to unload
+	 */
 	unloadPlugin(plugin) {
 		if(!this.has(plugin.name) && !this.has(plugin)) throw new Error('Plugin not loaded');
 		if(!(plugin instanceof Plugin)) plugin = this.get(plugin);
@@ -304,6 +319,18 @@ class PluginManager extends Collection {
 		return null;
 	}
 
+	/**
+	 * Crash a plugin. You probably don't want to call this directly see {@link Plugin#crash}
+	 * for a shortcut.
+	 *
+	 * If the PluginManager fails to gracefully unload (or reload for guarded plugins)
+	 * it will crash the entire node process. Crashed plugins that fail to gracefully unload
+	 * are considered an irrecoverable undefined state, and to prevent memoryleaks and other nasty
+	 * stuff, PluginManager will opt to crash the entire node process after a 5 second grace period
+	 * after emitting a {@link Client#pluginFatal} event.
+	 * @param {Plugin} plugin The plugin that has crashed
+	 * @param {Error} err The error that caused the crash
+	 */
 	crash(plugin, err) {
 		const pluginIdentifier = `${plugin.groupID}:${plugin.name}`;
 		if(this.crashingPlugins.has(pluginIdentifier)) return;

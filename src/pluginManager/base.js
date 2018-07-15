@@ -136,6 +136,19 @@ class Plugin {
 			}
 		});
 
+		/**
+		 * Wether this plugin is destroyed
+		 * @name Plugin#destroyed
+		 * @function
+		 * @type {boolean}
+		 * @readonly
+		 */
+		Reflect.defineProperty(this, 'crash', {
+			value: function crash(err) {
+				this.client.plugins.crash(this, err);
+			}
+		});
+
 		const origStart = this.start;
 		Reflect.defineProperty(this, 'start', {
 			value: function start(...args) {
@@ -164,12 +177,6 @@ class Plugin {
 				if(_started) this.stop();
 				origDestroy.apply(this, args);
 				_destroyed = true;
-			}
-		});
-
-		Reflect.defineProperty(this, 'crash', {
-			value: function crash(err) {
-				this.client.plugins.crash(this, err);
 			}
 		});
 	}
