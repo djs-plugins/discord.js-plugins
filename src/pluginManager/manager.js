@@ -9,10 +9,7 @@ const { isConstructor } = require('../utils');
 const EventProxyHandler = require('./eventProxyHandler');
 
 /**
- * @typedef {import('../client')} Client
- */
-/**
- * @typedef {import('discord.js-plugins').PluginClass} PluginClass
+ * @typedef {function(new: Plugin, Client)} PluginClass
  */
 
  /**

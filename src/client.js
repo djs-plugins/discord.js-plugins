@@ -2,8 +2,7 @@ const { Client } = require('discord.js');
 const PluginManager = require('./pluginManager/manager');
 
 /**
- * @typedef {import('discord.js').ClientOptions} ClientOptions
- * @typedef {import('discord.js').Client} Client
+ * @external ClientOptions
  */
 
 /**

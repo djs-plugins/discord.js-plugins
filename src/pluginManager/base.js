@@ -2,9 +2,6 @@
 /// <reference path="../../typings/index.d.ts" />
 const EventEmitter = require('events');
 const { oneLine } = require('common-tags');
-/**
- * @typedef {import('../client')} Client
- */
 
 /** A plugin that can be loaded in a client
  * @abstract
@@ -45,8 +42,11 @@ class Plugin {
 		/**
 		 * Reload this plugin
 		 * @name Plugin#reload
-		 * @type {Function:void}
-		 * @return {void}
+		 * @function
+		 * @param {boolean} throwOnFail Whether to rethrow any errors during reloading,
+		 * or if to attempt a revert and just return the error.
+		 * NOTE: It will still throw in some instances,
+		 * depending on what goes wrong during the reload, even when this is set to true.
 		 * @readonly
 		 */
 		Reflect.defineProperty(this, 'reload', {
@@ -58,8 +58,7 @@ class Plugin {
 		/**
 		 * Unload this plugin
 		 * @name Plugin#unload
-		 * @type {Function:void}
-		 * @return {void}
+		 * @function
 		 * @readonly
 		 */
 		Reflect.defineProperty(this, 'unload', {

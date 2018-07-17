@@ -47,28 +47,28 @@ class PluginGroup extends Collection {
 	 * Stops all of the group's plugins
 	 */
 	stop() {
-		for(const plugin of this.plugins.values()) plugin.stop();
+		for(const plugin of this.values()) plugin.stop();
 	}
 
 	/**
 	 * Stops all of the group's plugins
 	 */
 	start() {
-		for(const plugin of this.plugins.values()) plugin.start();
+		for(const plugin of this.values()) plugin.start();
 	}
 
 	/**
 	 * Unloads all of the group's plugins
 	 */
 	unload() {
-		for(const plugin of this.plugins.values()) plugin.unload();
+		for(const plugin of this.values()) plugin.unload();
 	}
 
 	/**
 	 * Reloads all of the group's plugins
 	 */
 	reload() {
-		for(const plugin of this.plugins.values()) plugin.reload();
+		for(const plugin of this.values()) plugin.reload();
 	}
 }
 
