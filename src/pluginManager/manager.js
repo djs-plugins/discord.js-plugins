@@ -44,9 +44,12 @@ class PluginManager extends Collection {
 	}
 
 	has(key) {
-		const keyArr = key.split(':');
-		const groupID = keyArr.shift();
-		const pluginName = keyArr.join(':');
+		let pluginName = null, groupID = key;
+		if(typeof key === 'string') {
+			const keyArr = key.split(':');
+			groupID = keyArr.shift();
+			pluginName = keyArr.join(':');
+		}
 		if(pluginName) {
 			const group = super.get(groupID);
 			if(group) {
@@ -57,9 +60,12 @@ class PluginManager extends Collection {
 	}
 
 	get(key) {
-		const keyArr = key.split(':');
-		const groupID = keyArr.shift();
-		const pluginName = keyArr.join(':');
+		let pluginName = null, groupID = key;
+		if(typeof key === 'string') {
+			const keyArr = key.split(':');
+			groupID = keyArr.shift();
+			pluginName = keyArr.join(':');
+		}
 		const group = super.get(groupID);
 		if(group && pluginName) {
 			return group.get(pluginName);
@@ -68,9 +74,12 @@ class PluginManager extends Collection {
 	}
 
 	set(key, val) {
-		const keyArr = key.split(':');
-		const groupID = keyArr.shift();
-		const pluginName = keyArr.join(':');
+		let pluginName = null, groupID = key;
+		if(typeof key === 'string') {
+			const keyArr = key.split(':');
+			groupID = keyArr.shift();
+			pluginName = keyArr.join(':');
+		}
 		if(pluginName) {
 			const group = super.get(groupID);
 			if(!group) throw new Error(`Group ${groupID} not found`);
