@@ -285,8 +285,8 @@ class PluginManager extends Collection {
 	 * @param {Plugin} plugin The plugin to unload
 	 */
 	unloadPlugin(plugin) {
-		if(!this.has(plugin.name) && !this.has(plugin)) throw new Error('Plugin not loaded');
-		if(!(plugin instanceof Plugin)) plugin = this.get(plugin);
+		if(typeof plugin === 'string') plugin = this.get(plugin);
+		if(!plugin || !this.has(`${plugin.groupID}:${plugin.name}`)) throw new Error('Plugin not loaded');
 		if(plugin.guarded) throw new Error(`Refusing to unload plugin, ${plugin.name} is guarded`);
 		if(plugin.group.guarded) {
 			throw new Error(oneLine`Refusing to unload plugin, ${plugin}
