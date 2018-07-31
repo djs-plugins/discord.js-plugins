@@ -197,7 +197,12 @@ class PluginManager extends Collection {
 				${group} which has guarded set. This is probably incorrect.
 				Guarded overrides autostart, so autostarting plugin anyway`);
 			}
-			plugin.start();
+			if(plugin.startOn) {
+				const promises = plugin.startOn.map(evt => new Promise(resolve => plugin.client.once(evt, resolve)));
+				Promise.all(promises).then(() => plugin.start());
+			} else {
+				plugin.start();
+			}
 		}
 
 		return this;
@@ -317,7 +322,7 @@ class PluginManager extends Collection {
 		}
 
 		for(let cacheId in require.cache) {
-			let cached = require.cache[cacheId];
+			const cached = require.cache[cacheId];
 			if(cached.exports === plugin.constructor) {
 				return cacheId;
 			}
