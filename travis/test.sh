@@ -20,5 +20,4 @@ else
 fi
 
 # Run the tests
-npm i --no-save git+https://github.com/discordjs/discord.js.git
 npm test

@@ -2,12 +2,10 @@ language: node_js
 node_js:
 - '8'
 - '9'
-cache:
-  directories:
-  - node_modules
-install: npm install
-script:
-- npm test
+install:
+  - npm install
+  - npm i --no-save git+https://github.com/discordjs/discord.js.git
+script: bash ./travis/test.sh
 jobs:
   include:
   - stage: deploy
@@ -16,5 +14,8 @@ jobs:
     env:
     - ENCRYPTION_LABEL="d9d8d4fbc4cd"
     - COMMIT_AUTHOR_EMAIL="admin@opposite.biz"
+cache:
+  directories:
+  - node_modules
 dist: trusty
 sudo: false
