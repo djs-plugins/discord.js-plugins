@@ -2,10 +2,6 @@ const { Client } = require('discord.js');
 const PluginManager = require('./pluginManager/manager');
 
 /**
- * @external ClientOptions
- */
-
-/**
  * Discord.js Client with a plugin framework
  * @extends {Client}
  */
