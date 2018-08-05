@@ -23,12 +23,12 @@ describe('PluginManager', function() {
 		afterEach(function() {
 			client.removeAllListeners();
 		});
-		it('constructor', function() {
+		xit('constructor', function() {
 			manager.plugins.size.should.be.equal(0, 'Plugins should be empty');
 			manager.groups.size.should.be.equal(1, 'Groups should be one');
 			manager.groups.firstKey().should.be.equal(manager.groups.first().id, 'Group id should be key of groups');
 		});
-		it('registerGroup', function() {
+		xit('registerGroup', function() {
 			class TestGroup extends PluginGroup {
 				constructor(_client) {
 					super(_client, 'test1');
@@ -38,7 +38,7 @@ describe('PluginManager', function() {
 			manager.groups.size.should.be.equal(2);
 			manager.groups.get('test1').should.be.instanceof(TestGroup);
 		});
-		it('registerPlugin', function() {
+		xit('registerPlugin', function() {
 			class EmptyPlugin extends Plugin {
 				constructor(_client) {
 					const info = {
@@ -52,7 +52,7 @@ describe('PluginManager', function() {
 			manager.plugins.size.should.be.equal(1);
 			manager.plugins.get('empty').should.be.instanceof(EmptyPlugin);
 		});
-		it('registerPluginsIn', function() {
+		xit('registerPluginsIn', function() {
 			const path = require('path');
 			manager.loadPluginsIn(path.join(__dirname, 'plugins'));
 			manager.plugins.size.should.be.equal(1);
