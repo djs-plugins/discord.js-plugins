@@ -1,12 +1,20 @@
 language: node_js
 node_js:
-  - "8"
-  - "9"
+- '8'
+- '9'
 cache:
   directories:
-    - node_modules
+  - node_modules
 install: npm install
 script:
-  - npm test
+- npm test
+jobs:
+  include:
+  - stage: deploy
+    node_js: 9
+    script: bash ./travis/deploy.sh
+    env:
+    - ENCRYPTION_LABEL="d9d8d4fbc4cd"
+    - COMMIT_AUTHOR_EMAIL="admin@opposite.biz"
 dist: trusty
 sudo: false
