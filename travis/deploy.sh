@@ -26,7 +26,6 @@ fi
 
 # Run the build
 npm run docs
-NODE_ENV=production npm run build:browser
 
 if [ $DONT_COMMIT == true ]; then
   echo -e "\e[36m\e[1mNot commiting - exiting early"
@@ -66,21 +65,3 @@ git push $SSH_REPO $TARGET_BRANCH
 # Clean up...
 cd ..
 rm -rf out
-
-echo -e "\e[36m\e[1mWebpack not configured - exiting early"
-exit 0
-
-# ...then do the same once more for the webpack
-TARGET_BRANCH="webpack"
-git clone $REPO out -b $TARGET_BRANCH
-
-# Move the generated webpack over
-mv webpack/discord.min.js out/discord.$SOURCE.min.js
-
-# Commit and push
-cd out
-git add .
-git config user.name "Travis CI"
-git config user.email "$COMMIT_AUTHOR_EMAIL"
-git commit -m "Webpack build for ${SOURCE_TYPE} ${SOURCE}: ${SHA}" || true
-git push $SSH_REPO $TARGET_BRANCH
