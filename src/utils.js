@@ -24,7 +24,7 @@ class Util {
 	 * @returns {PluginsClient} The client object, but now with added plugin functionality!
 	 */
 	static inject(client, options) {
-		const manager = new Manager(client);
+		const manager = new Manager(client, options);
 		client.plugins = manager;
 		return client;
 	}

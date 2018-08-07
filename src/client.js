@@ -34,7 +34,7 @@ class PluginsClient extends discord.Client {
 		 * The client's plugin manager
 		 * @type {PluginManager}
 		 */
-		this.plugins = new PluginManager(this);
+		this.plugins = new PluginManager(this, options);
 	}
 
 	async destroy() {
