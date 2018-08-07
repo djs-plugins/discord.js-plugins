@@ -237,19 +237,17 @@ class Plugin {
 	/**
 	 * Starts the plugin.<br/>
 	 * Overload this to register any event listeners or {@link Plugin#client} here.
-	 * @abstract
 	 */
 	start() {
-		// ABSTRACT
+		// NO-OP
 	}
 
 	/**
 	 * Stops the plugin.<br/>
 	 * Event listeners on {@link Plugin#client} are automatically cleared, even if overloaded.
-	 * @abstract
 	 */
 	stop() {
-		// ABSTRACT
+		// NO-OP
 	}
 
 	/**
