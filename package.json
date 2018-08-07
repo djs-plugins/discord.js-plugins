@@ -23,7 +23,7 @@
 		"mocha": "mocha",
 		"docs": "docgen --source src --custom docs/index.yml --output docs/docs.json",
 		"docs:test": "docgen --source src --custom docs/index.yml",
-		"docs:dev": "docgen --source src --custom docs/index.yml --output ../website/static/docs.json"
+		"docs:dev": "docgen --source src --custom docs/index.yml --output ../discord.js-plugins-site/static/docs.json"
 	},
 	"directories": {
 		"test": "test"
