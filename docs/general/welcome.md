@@ -20,4 +20,4 @@ It's flexible, object oriented and makes it easy to create a modular bot.
 
 ## Installation
 **ONLY TESTED ON Node.js 10.5.0**  
-`npm install git+https://github.com/NbOpposite/discord.js-plugins.git`
+`npm install NbOpposite/discord.js-plugins`
