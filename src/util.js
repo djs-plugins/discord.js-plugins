@@ -28,6 +28,7 @@ class Util {
 		client.plugins = manager;
 		return client;
 	}
-};
+}
 module.exports = Util;
+
 PluginManager = require('./pluginManager/manager');
