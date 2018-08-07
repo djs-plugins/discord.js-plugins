@@ -4,9 +4,12 @@ const path = require('path');
 const Plugin = require('./base');
 const PluginGroup = require('./pluginGroup');
 const { oneLine } = require('common-tags');
-const { isConstructor } = require('../utils');
 const EventProxyHandler = require('./eventProxyHandler');
+const { Collection } = require('discord.js');
+
 const privates = new WeakMap();
+
+let isConstructor;
 
 /**
  * @external Constructor
@@ -17,9 +20,9 @@ const privates = new WeakMap();
   * The main plugin manager. It extends `Map<string,PluginGroup`, but overrides any method that takes a `key`
   * in order for you to be able to use `client.plugins.get('group:plugin')` syntax, and not have to go trough
   * the hoop of using `client.plugins.get('group').get('plugin')`.
-  * @extends {Map<string,PluginGroup>}
+  * @extends {Collection<string,PluginGroup>}
   */
-class PluginManager extends Map {
+class PluginManager extends Collection {
     /** @param {Client} client - Client to use  */
 	constructor(client) {
 		super();
@@ -387,3 +390,4 @@ class PluginManager extends Map {
 }
 
 module.exports = PluginManager;
+isConstructor = require('../util').isConstructor;

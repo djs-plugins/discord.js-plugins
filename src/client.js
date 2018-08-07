@@ -2,16 +2,6 @@ const discord = require('discord.js');
 const PluginManager = require('./pluginManager/manager');
 
 /**
- * @external Client
- * @see {@link https://discord.js.org/#/docs/main/master/class/Client}
- */
-
-/**
- * @external ClientOptions
- * @see {@link https://discord.js.org/#/docs/main/master/typedef/ClientOptions}
- */
-
-/**
  * @typedef {ClientOptions} PluginsClientOptions
  * @property {number?} [pluginFatalGracePeriod=5000] - How many milliseconds to wait before crashing the bot
  * forcibly after a fatal error in the plugin manager.

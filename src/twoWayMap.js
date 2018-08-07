@@ -2,16 +2,6 @@ const privates = new WeakMap();
 const NOINIT = Symbol('NoInit');
 
 /**
- * @external Collection
- * @see {@link https://discord.js.org/#/docs/main/master/class/Collection}
- */
-
-/**
- * @external Iterator
- * @see {@link https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Iteration_protocols}
- */
-
-/**
  * @typedef {Array|string|Map|Set|Collection|Iterator} Iterable
  */
 /**

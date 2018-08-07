@@ -1,7 +1,9 @@
+const { Collection } = require('discord.js');
+
 /** A group for plugins
- * @extends {Map<string,Plugin>}
+ * @extends {Collection<string,Plugin>}
 */
-class PluginGroup extends Map {
+class PluginGroup extends Collection {
 	/**
 	 * @param {PluginsClient} client - The client the group is for
 	 * @param {string} id - The ID for the group
