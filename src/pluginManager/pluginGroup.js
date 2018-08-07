@@ -1,5 +1,5 @@
 /** A group for plugins
- * @extends {Map}
+ * @extends {Map<string,Plugin>}
 */
 class PluginGroup extends Map {
 	/**

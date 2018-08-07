@@ -48,6 +48,15 @@ class PluginManager extends Map {
 		_privates.crashingPlugins = new Set();
 	}
 
+	/**
+	 * The `has()` method returns a boolean indicating whether an element with the specified key exists or not.<br/>
+	 * Key can be the name of a {@link PluginGroup} or the format `<groupName>:<pluginName>`.<br/>
+	 * If the latter it will check the existence of both the {@link PluginGroup} and if the pluginName exists.
+	 * @override
+	 * @param {string} key - The key of the element to test for presence in the `PluginManager` object.
+	 * @returns {boolean} - true if an element with the specified key exists in the PluginManager object;
+	 * otherwise false.
+	 */
 	has(key) {
 		let pluginName = null, groupID = key;
 		if(typeof key === 'string') {
@@ -64,6 +73,15 @@ class PluginManager extends Map {
 		return super.has(groupID);
 	}
 
+	/**
+	 * The `get()` method returns a specified element from a `PluginManager` object.<br/>
+	 * Key can be the name of a {@link PluginGroup} or the format `<groupName>:<pluginName>`.<br/>
+	 * If the former, it will return a {@link PluginGroup}, if the latter it return a {@link Plugin} object.<br/>
+	 * @override
+	 * @param {string} key - The key of the element to return from the `PluginManager` object.
+	 * @return {PluginGroup|Plugin|undefined} - Returns the PluginGroup or Plugin object
+	 * associated with the specified key or undefined if the key can't be found in.
+	 */
 	get(key) {
 		let pluginName = null, groupID = key;
 		if(typeof key === 'string') {
@@ -78,7 +96,18 @@ class PluginManager extends Map {
 		return group;
 	}
 
-	set(key, val) {
+	/**
+	 * The `set()` method adds or updates an element with a specified key and value to the `PluginManager` object.
+	 * Key can be the name of a {@link PluginGroup} or the format `<groupName>:<pluginName>`.<br/>
+	 * If the former, val should be a {@link PluginGroup}, if the latter `value` should be a {@link Plugin} object.<br/>
+	 * **You shouldn't use this directly, instead use
+	 * {@link PluginManager#loadPlugin} or {@link PluginManager#registerGroup}.**
+	 * @override
+	 * @param {string} key - The key of the element to add to the `PluginManager` object.
+	 * @param {PluginGroup|Plugin} value - The value of the element to add to the `PluginManager` object.
+	 * @return {PluginManager} The PluginManager object.
+	 */
+	set(key, value) {
 		let pluginName = null, groupID = key;
 		if(typeof key === 'string') {
 			const keyArr = key.split(':');
@@ -88,9 +117,9 @@ class PluginManager extends Map {
 		if(pluginName) {
 			const group = super.get(groupID);
 			if(!group) throw new Error(`Group ${groupID} not found`);
-			group.set(pluginName, val);
+			group.set(pluginName, value);
 		} else {
-			super.set(groupID, val);
+			super.set(groupID, value);
 		}
 		return this;
 	}

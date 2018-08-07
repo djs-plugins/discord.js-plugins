@@ -76,9 +76,4 @@ class PluginsClient extends discord.Client {
  * @param {Error} error - The error that prevented the manager from unloading the plugin
  */
 
- /**
-  * @name PluginsClient#test
-  * @type {('test'|'tast')}
-  */
-
 module.exports = PluginsClient;
