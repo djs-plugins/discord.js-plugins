@@ -1,22 +1,19 @@
-const Client = require('./client');
+const PluginsClient = require('./client');
 const Manager = require('./pluginManager/manager');
 const Plugin = require('./pluginManager/base');
 const PluginGroup = require('./pluginManager/pluginGroup');
-
-function inject(client) {
-	const manager = new Manager(client);
-	client.plugins = manager;
-	return client;
-}
+const Util = require('./util');
 
 module.exports = {
-	Client,
-	PluginsClient: Client,
+	Client: PluginsClient,
+	PluginsClient,
 	Manager,
 	PluginManager: Manager,
 	Plugin,
 	PluginGroup,
-	inject,
-
+	util: Util,
+	Util: Util,
+	inject: Util.inject,
+	isConstructor: Util.isConstructor,
 	version: require('../package').version
 };

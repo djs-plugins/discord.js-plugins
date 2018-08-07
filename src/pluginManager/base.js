@@ -40,17 +40,20 @@ class Plugin {
 	 * @typedef {Object} PluginInfo
 	 * @property {string} name - The name of the plugin (must be lowercase)
 	 * @property {string} group - The ID of the group the plugin belongs to (must be lowercase)
-	 * @property {string} [guarded=false] - Whether the plugin is protected from being disabled
-	 * @property {string} [autostart=true] - Whether the plugin should start on load
+	 * @property {boolean} [guarded=false] - Whether the plugin is protected from being disabled
+	 * @property {boolean} [autostart=true] - Whether the plugin should start on load
 	 * @property {string} description - A short description of the plugin
 	 * @property {string} [details] - A detailed description of the plugin and its functionality
+	 * @property {string|Array<string>} [startOn] - Wait until these events have fired from the main client.
+	 * if multiple events are provided, it will wait until ALL events have fired at least once before starting.
+	 * (Only relevant when `autostart` is set to true)
 	 */
 
 	/**
 	 * Constructor, do not initiate any on listeners {@link Client} here.
 	 * They can, and will be removed with {@link Plugin#stop}. Initiate
 	 * listeners in {@link Plugin#start} instead.
-	 * @param {Client} client - The client the plugin is for
+	 * @param {PluginsClient} client - The client the plugin is for
 	 * @param {PluginInfo} info - The plugin information
 	 * @private
 	 */
@@ -76,7 +79,6 @@ class Plugin {
 		 * or if to attempt a revert and just return the error.
 		 * NOTE: It will still throw in some instances,
 		 * if the error happened in a way that rollback would be deemed unstable, even when this is set to false.
-		 * @readonly
 		 */
 		Reflect.defineProperty(this, 'reload', {
 			value: function reload(throwOnFail = false) {
@@ -88,7 +90,6 @@ class Plugin {
 		 * Unload this plugin
 		 * @name Plugin#unload
 		 * @function
-		 * @readonly
 		 */
 		Reflect.defineProperty(this, 'unload', {
 			value: function unload() {
@@ -146,7 +147,7 @@ class Plugin {
 
 		/**
 		 * Wait for which event to start this plugin with autostart
-		 * @type {?string}
+		 * @type {?Array<string>}
 		 */
 		this.startOn = 'startOn' in info ? Array.isArray(info.startOn) ? info.startOn : [info.startOn] : null;
 
@@ -177,11 +178,19 @@ class Plugin {
 		});
 
 		/**
-		 * Wether this plugin is destroyed
-		 * @name Plugin#destroyed
+		 * Crash this plugin. Should never be called manually
+		 * under normal circumstances. There are better ways
+		 * to handle errors than this. This is used internally
+		 * for last-resort error handling. But if you're certain
+		 * that all else has failed and want to go trough the entire
+		 * crash sequence, emitting the {@link PluginsClient#pluginError}
+		 * event and potentially bringing down the entire process if the crash handler
+		 * fails to unload the plugin, use this.
+		 * If the plugin fails to unload, a {@link PluginsClient#pluginFatal} event
+		 * will be emitted and the process will crash.
+		 * @name Plugin#crash
 		 * @function
-		 * @type {boolean}
-		 * @readonly
+		 * @param {Error} err - The error that caused the crash.
 		 */
 		Reflect.defineProperty(this, 'crash', {
 			value: function crash(err) {
@@ -226,15 +235,18 @@ class Plugin {
 	}
 
 	/**
-	 * Starts the plugin.
+	 * Starts the plugin.<br/>
 	 * Overload this to register any event listeners or {@link Plugin#client} here.
+	 * @abstract
 	 */
 	start() {
 		// ABSTRACT
 	}
 
 	/**
-	 * Called when the plugin gets stopped. Event listeners on {@link Plugin#client} are automatically cleared.
+	 * Stops the plugin.<br/>
+	 * Event listeners on {@link Plugin#client} are automatically cleared, even if overloaded.
+	 * @abstract
 	 */
 	stop() {
 		// ABSTRACT

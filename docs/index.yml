@@ -2,3 +2,5 @@
   files:
     - name: Welcome
       path: welcome.md
+    - name: Features
+      path: features.md

@@ -8,7 +8,6 @@ const listenersMap = new WeakMap();
   * A proxy handler for {@link Client} this isolates the event listeners
   * on {@link Client} on a per-plugin basis and catches any errors that any
   * listeners to {@link Client} may throw.
-  * @class {EventProxyHandler} EventProxyHandler
   * @private
   */
 class EventProxyHandler {
@@ -18,7 +17,12 @@ class EventProxyHandler {
 	}
 
 	/**
-	 * @param {Plugin} plugin the plugin this handler is for
+	 * Sets the plugin for this event handler.
+	 * This will also cause a warning to be emitted on the plugins client object
+	 * in the event that any listeners got registered prior to the plugin being set,
+	 * since this likely means that the plugin was registering listeners in the constructor.
+	 * @param {Plugin} plugin - The plugin this handler is for
+	 * @throws {Error} If you try to set the plugin twice.
 	 */
 	setPlugin(plugin) {
 		if(this.plugin) throw new Error('Attempting to set plugin twice');

@@ -1,5 +1,5 @@
 declare module 'discord.js-plugins' {
-	import { Client as dClient } from 'discord.js';
+	/*import { Client as dClient } from 'discord.js';
 	export class PluginManager {
 		constructor(client: Client);
 		readonly client: Client;
@@ -12,5 +12,5 @@ declare module 'discord.js-plugins' {
 
 	}
 	export type PluginClass = typeof Plugin;
-	export function inject<T extends dClient>(client: T) : T & Client
+	export function inject<T extends dClient>(client: T) : T & Client*/
 }

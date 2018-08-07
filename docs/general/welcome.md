@@ -18,10 +18,6 @@ specific bad plugin rather than crashing the entire bot.
 
 It's flexible, object oriented and makes it easy to create a modular bot.
 
-## Features
-List of features coming soon.
-This is still early in development and features are added as I need them for my own bot
-
 ## Installation
 **ONLY TESTED ON Node.js 10.5.0**  
 `npm install git+https://github.com/NbOpposite/discord.js-plugins.git`

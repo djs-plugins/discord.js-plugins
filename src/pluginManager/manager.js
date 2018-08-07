@@ -1,25 +1,30 @@
 // eslint-disable-next-line spaced-comment
 /// <reference path="../../typings/index.d.ts" />
 const path = require('path');
-const { Collection } = require('discord.js');
 const Plugin = require('./base');
 const PluginGroup = require('./pluginGroup');
 const { oneLine } = require('common-tags');
 const { isConstructor } = require('../utils');
 const EventProxyHandler = require('./eventProxyHandler');
+const privates = new WeakMap();
 
 /**
- * @typedef {function(new: Plugin, Client)} PluginClass
+ * @external Constructor
+ * @see {@link https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Classes/constructor}
  */
 
  /**
-  * @class
-  * @extends {Collection<string, PluginGroup>}
+  * The main plugin manager. It extends `Map<string,PluginGroup`, but overrides any method that takes a `key`
+  * in order for you to be able to use `client.plugins.get('group:plugin')` syntax, and not have to go trough
+  * the hoop of using `client.plugins.get('group').get('plugin')`.
+  * @extends {Map<string,PluginGroup>}
   */
-class PluginManager extends Collection {
+class PluginManager extends Map {
     /** @param {Client} client - Client to use  */
 	constructor(client) {
 		super();
+		const _privates = {};
+		privates.set(this, _privates);
         /**
          * The client that instantiated this
          * @name PluginManager#client
@@ -28,19 +33,19 @@ class PluginManager extends Collection {
          */
 		Object.defineProperty(this, 'client', { value: client });
 
-		/**
-         * Event listeners that each plugin has registered.
-         * @type {Collection<Plugin, Collection<string, Set<Function>>>}
-         */
-		this.listeners = new Collection();
-
         /**
          * Fully resolved path to the bot's plugins directory
          * @type {?string}
          */
 		this.pluginsPath = null;
 
-		this.crashingPlugins = new Set();
+        /**
+         * Plugins in the process of crashing
+         * @name PluginManager#crashingPlugins
+         * @type {Set<Plugin>}
+         * @private
+         */
+		_privates.crashingPlugins = new Set();
 	}
 
 	has(key) {
@@ -113,12 +118,6 @@ class PluginManager extends Collection {
 			this.client.emit('debug', `Plugin group ${group.id} is already registered; renamed it to "${group.name}".`);
 		} else {
 			this.set(group.id, group);
-      /**
-       * Emitted when a group is registered
-       * @event PluginsClient#pluginGroupRegister
-       * @param {PluginGroup} group - Group that was registered
-       * @param {PluginManager} manager - Registry that the group was registered to
-       */
 			this.client.emit('pluginGroupRegister', group, this);
 			this.client.emit('debug', `Registered plugin group ${group.id}.`);
 		}
@@ -154,7 +153,7 @@ class PluginManager extends Collection {
 
   /**
    * Loads a single plugin
-   * @param {PluginClass} PluginClass - a constructor for a Plugin
+   * @param {Constructor<Plugin>} PluginClass - a constructor for a Plugin
    * @return {PluginManager}
    * @see {@link PluginManager#loadPlugins}
    */
@@ -178,12 +177,6 @@ class PluginManager extends Collection {
 		plugin.group = group;
 		group.set(plugin.name, plugin);
 
-		/**
-		 * Emitted when a plugin is registered
-		 * @event Client#pluginRegister
-		 * @param {Plugin} plugin - Plugin that was registered
-		 * @param {PluginManager} manager - Registry that the plugin was registered to
-		 */
 		this.client.emit('pluginLoaded', plugin, this);
 		this.client.emit('debug', `Loaded plugin ${group.id}:${plugin.name}.`);
 
@@ -209,8 +202,8 @@ class PluginManager extends Collection {
 	}
 
   /**
-   * Loads a single plugin
-   * @param {PluginClass[]} pluginClasses - a constructor for a Plugin
+   * Loads an array of plugins
+   * @param {Array<Constructor<Plugin>>} pluginClasses - an array of constructors for Plugins
    * @param {boolean} [ignoreInvalid=false] - Whether to skip over invalid plugins without throwing an error
    * @return {PluginManager}
    * @see {@link PluginManager#registerPlugins}
@@ -338,14 +331,15 @@ class PluginManager extends Collection {
 	 * it will crash the entire node process. Crashed plugins that fail to gracefully unload
 	 * are considered an irrecoverable undefined state, and to prevent memoryleaks and other nasty
 	 * stuff, PluginManager will opt to crash the entire node process after a 5 second grace period
-	 * after emitting a {@link Client#pluginFatal} event.
+	 * after emitting a {@link PluginsClient#pluginFatal} event.
 	 * @param {Plugin} plugin The plugin that has crashed
 	 * @param {Error} err The error that caused the crash
 	 */
 	crash(plugin, err) {
+		const _privates = privates.get(this);
 		const pluginIdentifier = `${plugin.groupID}:${plugin.name}`;
-		if(this.crashingPlugins.has(pluginIdentifier)) return;
-		this.crashingPlugins.add(pluginIdentifier);
+		if(_privates.crashingPlugins.has(pluginIdentifier)) return;
+		_privates.crashingPlugins.add(pluginIdentifier);
 		this.client.emit('pluginError', plugin, err);
 		try {
 			if(!plugin.guarded) {
@@ -353,7 +347,7 @@ class PluginManager extends Collection {
 			} else {
 				plugin.reload(true);
 			}
-			this.crashingPlugins.delete(pluginIdentifier);
+			_privates.crashingPlugins.delete(pluginIdentifier);
 		} catch(err2) {
 			// Give logging and other stuff 5 seconds to do stuff before forcibly crashing the process.
 			setTimeout(() => process.exit(1), 5000);
