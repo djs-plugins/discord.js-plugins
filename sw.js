@@ -1,4 +1,4 @@
-const GITHUB_ORG = 'https://raw.githubusercontent.com/NbOpposite/';
+const GITHUB_ORG = 'https://raw.githubusercontent.com/djs-plugins/';
 
 self.addEventListener('fetch', event => {
   const req = event.request;
