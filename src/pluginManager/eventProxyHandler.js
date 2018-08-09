@@ -1,7 +1,7 @@
 const { stripIndents } = require('common-tags');
 const Plugin = require('./base');
 const { Collection } = require('discord.js');
-const TwoWayMap = require('../twoWayMap');
+const ReversibleMap = require('../reversibleMap');
 const listenersMap = new WeakMap();
 
  /**
@@ -56,7 +56,7 @@ class EventProxyHandler {
 					const listeners = cache || listenersMap.get(plugin);
 
 					let fns = listeners.get(eventName);
-					if(!fns) listeners.set(eventName, fns = new TwoWayMap());
+					if(!fns) listeners.set(eventName, fns = new ReversibleMap());
 
 					fns.set(listener, wrappedListener);
 					return receiver;

@@ -7,7 +7,7 @@ const NOINIT = Symbol('NoInit');
 /**
  * A reversible map where both keys and values must be unique and where the map can be flipped.
  */
-class TwoWayMap {
+class ReversibleMap {
 	/**
 	 * @param {Iterable} [iterable] Which iterable object to generate the initial map from.
 	 */
@@ -20,7 +20,7 @@ class TwoWayMap {
 		_private.normal = new Map();
 		_private.reversed = new Map();
 
-		const reversed = new TwoWayMap(NOINIT);
+		const reversed = new ReversibleMap(NOINIT);
 		const newPrivate = privates.get(reversed);
 		newPrivate.normal = _private.reversed;
 		newPrivate.reversed = _private.normal;
@@ -29,7 +29,7 @@ class TwoWayMap {
 
 		if(iterable) {
 			for(let [key, val] of iterable) {
-				if(privates.reverse.has(val)) throw new Error('Values must be unique in a TwoWayMap');
+				if(privates.reverse.has(val)) throw new Error('Values must be unique in a ReversibleMap');
 				_private.reversed.set(val, key);
 				_private.normal.set(key, val);
 			}
@@ -37,7 +37,7 @@ class TwoWayMap {
 	}
 
 	/**
-	 * Returns the number of key/value pairs in the `TwoWayMap` object.
+	 * Returns the number of key/value pairs in the `ReversibleMap` object.
 	 * @type {number}
 	 * @readonly
 	 */
@@ -47,12 +47,12 @@ class TwoWayMap {
 	}
 
 	/**
-	 * Reversed version of the `TwoWayMap` object.
+	 * Reversed version of the `ReversibleMap` object.
 	 * This is **NOT** a copy, any changes made to the reversed
-	 * version of the `TwoWayMap` will reflect on the non-reversed
+	 * version of the `ReversibleMap` will reflect on the non-reversed
 	 * version. Also the reversed-reversed version is the same object
 	 * as the original non-reversed version.
-	 * @type {TwoWayMap}
+	 * @type {ReversibleMap}
 	 * @readonly
 	 */
 	get reversed() {
@@ -70,11 +70,11 @@ class TwoWayMap {
 	}
 
 	/**
-	 * Returns `true` if an element in the `TwoWayMap` object existed and has been removed,
+	 * Returns `true` if an element in the `ReversibleMap` object existed and has been removed,
 	 * or `false` if the element does not exist.
-	 * {@link TwoWayMap#has} will return `false` afterwards.
-	 * @param {*} key The key of the element to remove from the `TwoWayMap` object.
-	 * @returns {boolean} Returns true if an element in the TwoWayMap object existed and has been removed,
+	 * {@link ReversibleMap#has} will return `false` afterwards.
+	 * @param {*} key The key of the element to remove from the `ReversibleMap` object.
+	 * @returns {boolean} Returns true if an element in the ReversibleMap object existed and has been removed,
 	 * or false if the element does not exist.
 	 */
 	delete(key) {
@@ -88,7 +88,7 @@ class TwoWayMap {
 
 	/**
 	 * Returns a new {@link Iterator} object that contains
-	 * **an array of `[key, value]`** for each element in the `TwoWayMap` object.
+	 * **an array of `[key, value]`** for each element in the `ReversibleMap` object.
 	 * @return {Iterator} A new Map iterator object.
 	 */
 	entries() {
@@ -97,7 +97,7 @@ class TwoWayMap {
 	}
 
 	/**
-	 * Calls `callback` once for each key-value pair present in the `TwoWayMap` object.
+	 * Calls `callback` once for each key-value pair present in the `ReversibleMap` object.
 	 * If a thisArg parameter is provided to forEach, it will be used as the this value for each callback.
 	 * @param {Function} callback Function to execute for each element.
 	 * @param {*} [thisArg] Value to use as this when executing `callback`.
@@ -110,9 +110,9 @@ class TwoWayMap {
 
 	/**
 	 * Returns the value associated to the `key`, or `undefined` if there is none.
-	 * @param {*} key The key of the element to return from the `TwoWayMap` object.
+	 * @param {*} key The key of the element to return from the `ReversibleMap` object.
 	 * @return {*} Returns the element associated with the specified key or
-	 * undefined if the key can't be found in the TwoWayMap object.
+	 * undefined if the key can't be found in the ReversibleMap object.
 	 */
 	get(key) {
 		const _private = privates.get(this);
@@ -120,9 +120,9 @@ class TwoWayMap {
 	}
 	/**
 	 * The `has()` method returns a boolean indicating whether an element with the specified key exists or not.
-	 * @param {*} key The key of the element to test for presence in the `TwoWayMap` object.
+	 * @param {*} key The key of the element to test for presence in the `ReversibleMap` object.
 	 * @returns {boolean} Returns `true` if an element with the specified key exists in the
-	 * `TwoWayMap` object; otherwise `false`.
+	 * `ReversibleMap` object; otherwise `false`.
 	 */
 	has(key) {
 		const _private = privates.get(this);
@@ -131,7 +131,7 @@ class TwoWayMap {
 
 	/**
 	 * The `keys()` method returns a new {@link Iterator} object that contains the
-	 * keys for each element in the `TwoWayMap` object.
+	 * keys for each element in the `ReversibleMap` object.
 	 * @returns {Iterator} A new Map iterator object.
 	 */
 	keys() {
@@ -140,11 +140,11 @@ class TwoWayMap {
 	}
 
 	/**
-	 * The `set()` method adds or updates an element with a specified `key` and `value` to a `TwoWayMap` object.
+	 * The `set()` method adds or updates an element with a specified `key` and `value` to a `ReversibleMap` object.
 	 * NOTE: Unlike a normal map, values must be unique in this map.
-	 * @param {*} key The key of the element to add to the `TwoWayMap` object.
-	 * @param {*} val The value of the element to add to the `TwoWayMap` object.
-	 * @return {TwoWayMap} The `TwoWayMap` object.
+	 * @param {*} key The key of the element to add to the `ReversibleMap` object.
+	 * @param {*} val The value of the element to add to the `ReversibleMap` object.
+	 * @return {ReversibleMap} The `ReversibleMap` object.
 	 */
 	set(key, val) {
 		const _private = privates.get(this);
@@ -152,7 +152,7 @@ class TwoWayMap {
 			const reversedVal = _private.reversed.get(val);
 			const bothNan = Object.is(reversedVal, NaN) && Object.is(key, NaN);
 			if(reversedVal === key || bothNan) return this;
-			throw new Error('Values must be unique in a TwoWayMap');
+			throw new Error('Values must be unique in a ReversibleMap');
 		}
 
 		if(_private.normal.has(key)) {
@@ -172,6 +172,6 @@ class TwoWayMap {
 	}
 }
 
-TwoWayMap.prototype[Symbol.iterator] = TwoWayMap.prototype.entries;
+ReversibleMap.prototype[Symbol.iterator] = ReversibleMap.prototype.entries;
 
-module.exports = TwoWayMap;
+module.exports = ReversibleMap;
